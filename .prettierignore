@@ -1,0 +1,9 @@
+.next
+node_modules
+src/generated/prisma
+playwright-report
+test-results
+docs
+gatherly
+ReadMe.md
+package-lock.json

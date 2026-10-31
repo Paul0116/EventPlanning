@@ -1,0 +1,35 @@
+name: gatherly-local
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: gatherly
+      POSTGRES_PASSWORD: gatherly_local_only
+      POSTGRES_USER: gatherly
+    ports:
+      - "127.0.0.1:54329:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gatherly -d gatherly"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - gatherly_postgres_data:/var/lib/postgresql/data
+
+  postgres-test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: gatherly_test
+      POSTGRES_PASSWORD: gatherly_test_only
+      POSTGRES_USER: gatherly_test
+    ports:
+      - "127.0.0.1:54330:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gatherly_test -d gatherly_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  gatherly_postgres_data:

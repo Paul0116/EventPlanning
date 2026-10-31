@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: gatherly_ci
+          POSTGRES_PASSWORD: gatherly_ci_only
+          POSTGRES_USER: gatherly_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gatherly_ci -d gatherly_ci"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      DATABASE_URL: postgresql://gatherly_ci:gatherly_ci_only@127.0.0.1:5432/gatherly_ci
+      MIGRATION_DATABASE_URL: postgresql://gatherly_ci:gatherly_ci_only@127.0.0.1:5432/gatherly_ci
+      TEST_DATABASE_URL: postgresql://gatherly_ci:gatherly_ci_only@127.0.0.1:5432/gatherly_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run format
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run db:migrate:deploy
+      - run: npm run test:integration
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:signed-out -- --project=chromium
